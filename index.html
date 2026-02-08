@@ -511,27 +511,136 @@
         border-top: 1px solid var(--border);
         padding-top: 8px;
       }
+      .todo-row {
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 2px;
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        transition: transform 0.25s ease-out;
+      }
+      .todo-row:last-child {
+        margin-bottom: 0;
+      }
+      .todo-row-delete {
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 80px;
+        pointer-events: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #c62828;
+        border: none;
+        border-radius: 0;
+        color: #fff;
+        font: inherit;
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: pointer;
+        -webkit-appearance: none;
+        appearance: none;
+        padding: 0;
+        flex-shrink: 0;
+        z-index: 0;
+      }
+      .todo-row.reveal-delete .todo-row-delete {
+        pointer-events: auto;
+      }
+      .todo-row-delete:active {
+        background: #b71c1c;
+      }
       .todo-item {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        min-width: 100%;
+        box-sizing: border-box;
         display: flex;
         align-items: center;
         gap: 12px;
-        padding: 10px 0;
-        border-bottom: none;
+        padding: 12px 10px;
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        min-height: 48px;
+        transition: transform 300ms ease;
+        will-change: transform;
       }
-      .todo-item input[type="checkbox"] {
-        width: 22px;
-        height: 22px;
-        flex-shrink: 0;
-        accent-color: var(--accent);
+      .todo-row.reveal-delete .todo-item {
+        transform: translateX(-80px);
       }
-      .todo-item label {
+      .todo-item .todo-check-label {
+        display: flex;
+        align-items: center;
+        gap: 12px;
         flex: 1;
+        min-width: 0;
         cursor: pointer;
         user-select: none;
       }
-      .todo-item.done label {
+      .todo-item input[type="checkbox"] {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+        margin: 0;
+        pointer-events: none;
+      }
+      .todo-check-visual {
+        width: 22px;
+        height: 22px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        border: 2px solid var(--text-muted);
+        background: var(--surface);
+        transition: background 0.2s ease, border-color 0.2s ease;
+      }
+      .todo-item input:checked + .todo-check-visual {
+        background: #fff;
+        border-color: #fff;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2338383a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 13l4 4L19 7'/%3E%3C/svg%3E");
+        background-size: 14px 14px;
+        background-position: center;
+        background-repeat: no-repeat;
+      }
+      .todo-item .todo-label-text {
+        flex: 1;
+        min-width: 0;
+      }
+      .todo-item.done .todo-label-text {
         text-decoration: line-through;
         color: var(--text-muted);
+      }
+      .todo-drag-handle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px;
+        margin: -6px -6px -6px 0;
+        color: var(--text-muted);
+        cursor: grab;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: none;
+      }
+      .todo-drag-handle:active {
+        cursor: grabbing;
+      }
+      .todo-drag-handle svg {
+        width: 20px;
+        height: 20px;
+        display: block;
+      }
+      .todo-row.drag-over .todo-item {
+        opacity: 0.6;
+      }
+      .todo-row.todo-row-dragging {
+        opacity: 0.85;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      }
+      .todo-row.todo-row-dragging .todo-item {
+        background: var(--surface-hover);
       }
     </style>
   </head>
@@ -714,6 +823,7 @@
 
       let currentKey = todayKey();
       let state = getDayData(currentKey);
+      var todoReorderDragging = false;
 
       function getRoute() {
         const hash = (location.hash || "").replace(/^#/, "");
@@ -793,20 +903,21 @@
         const listEl = document.getElementById("todo-list");
         listEl.innerHTML = "";
         (state.todos || []).forEach((todo, i) => {
-          const div = document.createElement("div");
-          div.className = "todo-item" + (todo.done ? " done" : "");
-          div.innerHTML =
-            '<input type="checkbox" id="t-' +
-            i +
-            '" ' +
-            (todo.done ? "checked" : "") +
-            ">" +
-            '<label for="t-' +
-            i +
-            '">' +
-            escapeHtml(todo.text) +
-            "</label>";
-          listEl.appendChild(div);
+          const row = document.createElement("div");
+          row.className = "todo-row";
+          row.setAttribute("data-index", String(i));
+          row.innerHTML =
+            '<button type="button" class="todo-row-delete" data-index="' + i + '">Delete</button>' +
+            '<div class="todo-item' + (todo.done ? " done" : "") + '">' +
+            '<label class="todo-check-label">' +
+            '<input type="checkbox" id="t-' + i + '" ' + (todo.done ? "checked" : "") + ">" +
+            '<span class="todo-check-visual" aria-hidden="true"></span>' +
+            '<span class="todo-label-text">' + escapeHtml(todo.text) + "</span>" +
+            "</label>" +
+            '<span class="todo-drag-handle" draggable="true" data-index="' + i + '" aria-label="Reorder">' +
+            '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v1.5H4V6zm0 5.5h16V13H4v-1.5zm0 5.5h16V19H4v-1.5z"/></svg>' +
+            "</span></div>";
+          listEl.appendChild(row);
         });
 
         listEl.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
@@ -818,6 +929,197 @@
           });
         });
 
+        listEl.querySelectorAll(".todo-row-delete").forEach((btn) => {
+          btn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            const i = parseInt(this.getAttribute("data-index"), 10);
+            state.todos.splice(i, 1);
+            persistDay(currentKey, state);
+            renderNote(true);
+          });
+        });
+
+        setupSwipeToDelete(listEl);
+        setupTodoReorder(listEl);
+      }
+
+      function setupSwipeToDelete(listEl) {
+        var startX = 0, currentX = 0, startOffset = 0, sliding = null;
+        var DELETE_WIDTH = 80;
+        var THRESHOLD = 40;
+
+        function slideTo(rowEl, offsetPx) {
+          var content = rowEl && rowEl.querySelector(".todo-item");
+          if (!content) return;
+          var tx = Math.max(-DELETE_WIDTH, Math.min(0, offsetPx));
+          content.style.transition = "none";
+          content.style.transform = "translateX(" + tx + "px)";
+        }
+
+        function commitSlide(rowEl, reveal) {
+          var content = rowEl && rowEl.querySelector(".todo-item");
+          if (!content) return;
+          content.style.transition = "";
+          if (reveal) {
+            rowEl.classList.add("reveal-delete");
+            content.style.transform = "translateX(-" + DELETE_WIDTH + "px)";
+          } else {
+            rowEl.classList.remove("reveal-delete");
+            content.style.transform = "translateX(0)";
+          }
+        }
+
+        function closeAllRevealed() {
+          listEl.querySelectorAll(".todo-row.reveal-delete").forEach(function (r) {
+            commitSlide(r, false);
+          });
+        }
+
+        function onStart(clientX, target) {
+          if (todoReorderDragging) return;
+          var r = target.closest(".todo-row");
+          if (!r) return;
+          sliding = r;
+          startX = clientX;
+          currentX = clientX;
+          startOffset = r.classList.contains("reveal-delete") ? -DELETE_WIDTH : 0;
+          var content = r.querySelector(".todo-item");
+          if (content) content.style.transition = "none";
+        }
+
+        function onMove(clientX) {
+          if (!sliding) return;
+          currentX = clientX;
+          var dx = currentX - startX;
+          slideTo(sliding, startOffset + dx);
+        }
+
+        function onEnd() {
+          if (!sliding) return;
+          var content = sliding.querySelector(".todo-item");
+          if (content) content.style.transition = "";
+          var dx = currentX - startX;
+          var finalOffset = startOffset + dx;
+          if (finalOffset < -THRESHOLD) commitSlide(sliding, true);
+          else commitSlide(sliding, false);
+          sliding = null;
+        }
+
+        listEl.addEventListener("touchstart", function (e) {
+          if (e.target.closest(".todo-row-delete") || e.target.closest(".todo-drag-handle")) return;
+          onStart(e.touches[0].clientX, e.target);
+        }, { passive: true });
+        listEl.addEventListener("touchmove", function (e) {
+          if (sliding) {
+            e.preventDefault();
+            onMove(e.touches[0].clientX);
+          }
+        }, { passive: false });
+        listEl.addEventListener("touchend", onEnd, { passive: true });
+        listEl.addEventListener("touchcancel", onEnd, { passive: true });
+
+        listEl.addEventListener("mousedown", function (e) {
+          if (e.button !== 0 || e.target.closest(".todo-row-delete") || e.target.closest(".todo-drag-handle")) return;
+          onStart(e.clientX, e.target);
+        });
+        document.addEventListener("mousemove", function (e) {
+          if (sliding) onMove(e.clientX);
+        });
+        document.addEventListener("mouseup", function () {
+          if (sliding) onEnd();
+        });
+
+        document.addEventListener("click", function (e) {
+          if (listEl.querySelectorAll(".todo-row.reveal-delete").length === 0) return;
+          if (e.target.closest(".todo-row-delete")) return;
+          closeAllRevealed();
+        });
+      }
+
+      function setupTodoReorder(listEl) {
+        var draggedRow = null;
+
+        listEl.addEventListener("dragstart", function (e) {
+          var handle = e.target.closest(".todo-drag-handle");
+          if (!handle) return;
+          todoReorderDragging = true;
+          draggedRow = handle.closest(".todo-row");
+          if (draggedRow) draggedRow.classList.add("todo-row-dragging");
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData("text/plain", handle.getAttribute("data-index"));
+          e.dataTransfer.setData("application/json", "{}");
+        });
+        listEl.addEventListener("dragend", function (e) {
+          todoReorderDragging = false;
+          if (draggedRow && draggedRow.parentNode) draggedRow.classList.remove("todo-row-dragging");
+          listEl.querySelectorAll(".todo-row").forEach(function (r) {
+            r.classList.remove("drag-over");
+            r.style.transition = "";
+            r.style.transform = "";
+          });
+          draggedRow = null;
+        });
+        listEl.addEventListener("dragover", function (e) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "move";
+          if (!draggedRow || draggedRow.parentNode !== listEl) return;
+          var rowUnder = document.elementFromPoint(e.clientX, e.clientY);
+          rowUnder = rowUnder && rowUnder.closest ? rowUnder.closest(".todo-row") : null;
+          if (!rowUnder || rowUnder.parentNode !== listEl || rowUnder === draggedRow) return;
+          var children = listEl.children;
+          var rowIndex = Array.prototype.indexOf.call(children, rowUnder);
+          var rect = rowUnder.getBoundingClientRect();
+          var midY = rect.top + rect.height / 2;
+          var dropIndex = e.clientY < midY ? rowIndex : rowIndex + 1;
+          var currentIndex = Array.prototype.indexOf.call(children, draggedRow);
+          if (dropIndex === currentIndex) return;
+          listEl.querySelectorAll(".todo-row").forEach(function (r) { r.classList.remove("drag-over"); });
+          rowUnder.classList.add("drag-over");
+          var oldRects = new Map();
+          for (var i = 0; i < children.length; i++) {
+            oldRects.set(children[i], children[i].getBoundingClientRect());
+          }
+          if (dropIndex >= children.length) {
+            listEl.appendChild(draggedRow);
+          } else {
+            listEl.insertBefore(draggedRow, children[dropIndex]);
+          }
+          requestAnimationFrame(function () {
+            var newChildren = listEl.children;
+            for (var j = 0; j < newChildren.length; j++) {
+              var node = newChildren[j];
+              var oldRect = oldRects.get(node);
+              if (!oldRect) continue;
+              var newRect = node.getBoundingClientRect();
+              var dy = oldRect.top - newRect.top;
+              if (Math.abs(dy) < 0.5) continue;
+              node.style.transition = "none";
+              node.style.transform = "translateY(" + dy + "px)";
+            }
+            requestAnimationFrame(function () {
+              for (var k = 0; k < listEl.children.length; k++) {
+                var n = listEl.children[k];
+                n.style.transition = "transform 0.25s ease-out";
+                n.style.transform = "translateY(0)";
+              }
+            });
+          });
+        });
+        listEl.addEventListener("drop", function (e) {
+          e.preventDefault();
+          listEl.querySelectorAll(".todo-row").forEach(function (r) { r.classList.remove("drag-over"); });
+          if (!draggedRow) return;
+          var children = listEl.children;
+          var newOrder = [];
+          for (var i = 0; i < children.length; i++) {
+            var idx = parseInt(children[i].getAttribute("data-index"), 10);
+            if (!isNaN(idx)) newOrder.push(idx);
+          }
+          if (newOrder.length !== children.length) return;
+          state.todos = newOrder.map(function (i) { return state.todos[i]; });
+          persistDay(currentKey, state);
+          renderNote(true);
+        });
       }
 
       document
