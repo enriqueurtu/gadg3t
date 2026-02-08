@@ -217,6 +217,26 @@
       .view.active {
         display: block;
       }
+      .slide-container {
+        position: relative;
+        overflow: hidden;
+        min-height: 100vh;
+      }
+      .slide-container .slide-track {
+        display: flex;
+        width: 200%;
+        min-height: 100vh;
+        transition: transform 0.35s ease;
+      }
+      .slide-container .slide-track .view {
+        width: 50%;
+        flex-shrink: 0;
+        display: block;
+        min-height: 100vh;
+      }
+      .slide-container .slide-track.show-note {
+        transform: translateX(-50%);
+      }
 
       .menu-title {
         font-size: 1.75rem;
@@ -647,6 +667,8 @@
     </style>
   </head>
   <body>
+    <div id="slide-container" class="slide-container">
+      <div id="slide-track" class="slide-track">
     <div id="menu-view" class="view">
       <div class="menu-header">
         <h1 class="menu-title">GADG3T</h1>
@@ -657,7 +679,6 @@
           </svg>
         </a>
       </div>
-      <p class="menu-sub">Open today’s note or pick a past day.</p>
       <div class="today-section-title">Today's note</div>
       <button type="button" class="menu-item-btn" id="btn-today">
         <span>Today's note</span>
@@ -665,22 +686,6 @@
       </button>
       <div class="past-section-title">PAST</div>
       <ul id="past-list" class="past-list"></ul>
-    </div>
-
-    <div id="options-view" class="view">
-      <a href="#" class="back-link" id="back-from-options">← Back to menu</a>
-      <h1 class="menu-title">Settings</h1>
-      <p class="menu-sub">Customize your tracker. More settings coming later.</p>
-      <div class="card">
-        <div class="card-title">SR Counter</div>
-        <p
-          style="margin: 0 0 12px; font-size: 0.95rem; color: var(--text-muted)"
-        >
-          The SR counter increases by 1 each day. Reset it here to start the
-          streak over (today becomes Day 0).
-        </p>
-        <button type="button" id="reset-sr">Reset SR Counter</button>
-      </div>
     </div>
 
     <div id="note-view" class="view">
@@ -737,6 +742,24 @@
           <button type="button" class="todo-add-btn" id="todo-add" aria-label="Add todo">+</button>
         </div>
         <div id="todo-list" class="todo-list"></div>
+      </div>
+    </div>
+      </div>
+    </div>
+
+    <div id="options-view" class="view">
+      <a href="#" class="back-link" id="back-from-options">← Back to menu</a>
+      <h1 class="menu-title">Settings</h1>
+      <p class="menu-sub">Customize your tracker. More settings coming later.</p>
+      <div class="card">
+        <div class="card-title">SR Counter</div>
+        <p
+          style="margin: 0 0 12px; font-size: 0.95rem; color: var(--text-muted)"
+        >
+          The SR counter increases by 1 each day. Reset it here to start the
+          streak over (today becomes Day 0).
+        </p>
+        <button type="button" id="reset-sr">Reset SR Counter</button>
       </div>
     </div>
 
@@ -839,19 +862,16 @@
       function showView(route) {
         if (
           route.view !== "note" &&
-          document.getElementById("note-view").classList.contains("active")
+          document.getElementById("slide-track").classList.contains("show-note")
         ) {
           saveLunch();
         }
-        document
-          .getElementById("menu-view")
-          .classList.toggle("active", route.view === "menu");
-        document
-          .getElementById("options-view")
-          .classList.toggle("active", route.view === "options");
-        document
-          .getElementById("note-view")
-          .classList.toggle("active", route.view === "note");
+        var slideContainer = document.getElementById("slide-container");
+        var optionsView = document.getElementById("options-view");
+        var slideTrack = document.getElementById("slide-track");
+        slideContainer.style.display = route.view === "options" ? "none" : "";
+        optionsView.classList.toggle("active", route.view === "options");
+        slideTrack.classList.toggle("show-note", route.view === "note");
         if (route.view === "menu") {
           renderMenu();
         } else if (route.view === "options") {
