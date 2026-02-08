@@ -64,11 +64,37 @@
       gap: 12px;
       flex-wrap: wrap;
     }
+    .row-tight {
+      gap: 6px;
+    }
+    .pu-group {
+      display: flex;
+      align-items: baseline;
+      gap: 0;
+    }
+    .pu-group .counter-value {
+      margin-left: -2px;
+    }
 
     .counter-value {
       font-size: 1.25rem;
       font-weight: 600;
       min-width: 4ch;
+    }
+
+    #pu-value {
+      font: inherit;
+      font-size: 1.25rem;
+      font-weight: 600;
+      width: 4ch;
+      padding: 0;
+      margin: 0;
+      border: none;
+      background: transparent;
+      text-align: right;
+    }
+    #pu-value:focus {
+      outline: none;
     }
 
     button {
@@ -87,7 +113,7 @@
       opacity: 0.8;
     }
 
-    input[type="time"] {
+    #lunch-time {
       font: inherit;
       padding: 10px 12px;
       border: 1px solid var(--border);
@@ -268,9 +294,13 @@
 
   <div class="card">
     <div class="card-title">PU Counter</div>
-    <div class="row">
-      <span class="counter-value" id="pu-display">0/100</span>
-      <button type="button" id="pu-increment">+1</button>
+    <div class="row row-tight">
+      <div class="pu-group">
+        <input type="number" id="pu-value" min="0" max="100" value="0" aria-label="PU count">
+        <span class="counter-value">/100</span>
+      </div>
+      <button type="button" id="pu-decrement">−</button>
+      <button type="button" id="pu-increment">+</button>
     </div>
   </div>
 
@@ -345,7 +375,12 @@
 
     function persistDay(dateKey, dayData) {
       const data = loadAll();
-      data[dateKey] = dayData;
+      data[dateKey] = {
+        srCounter: dayData.srCounter ?? 0,
+        puCounter: dayData.puCounter ?? 0,
+        lunch: dayData.lunch || '',
+        todos: Array.isArray(dayData.todos) ? dayData.todos : []
+      };
       saveAll(data);
     }
 
@@ -362,6 +397,9 @@
     }
 
     function showView(route) {
+      if (route.view !== 'note' && document.getElementById('note-view').classList.contains('active')) {
+        saveLunch();
+      }
       document.getElementById('menu-view').classList.toggle('active', route.view === 'menu');
       document.getElementById('options-view').classList.toggle('active', route.view === 'options');
       document.getElementById('note-view').classList.toggle('active', route.view === 'note');
@@ -372,7 +410,7 @@
       } else {
         currentKey = route.dateKey;
         state = getDayData(currentKey);
-        renderNote();
+        renderNote(false);
       }
     }
 
@@ -390,11 +428,12 @@
       }
     }
 
-    function renderNote() {
+    function renderNote(skipLunchInputUpdate) {
+      var lunchEl = document.getElementById('lunch-time');
+      if (lunchEl && !skipLunchInputUpdate) lunchEl.value = state.lunch || '';
       document.getElementById('today-date').textContent = formatDisplayDate(currentKey);
       document.getElementById('sr-display').textContent = 'Day ' + (state.srCounter ?? 0);
-      document.getElementById('pu-display').textContent = (state.puCounter ?? 0) + '/100';
-      document.getElementById('lunch-time').value = state.lunch || '';
+      document.getElementById('pu-value').value = state.puCounter ?? 0;
 
       const listEl = document.getElementById('todo-list');
       listEl.innerHTML = '';
@@ -413,7 +452,7 @@
           const i = parseInt(this.id.replace('t-', ''), 10);
           state.todos[i].done = this.checked;
           persistDay(currentKey, state);
-          renderNote();
+          renderNote(true);
         });
       });
 
@@ -422,7 +461,7 @@
           const i = parseInt(this.getAttribute('data-i'), 10);
           state.todos.splice(i, 1);
           persistDay(currentKey, state);
-          renderNote();
+          renderNote(true);
         });
       });
     }
@@ -439,6 +478,7 @@
 
     document.getElementById('back-to-menu').addEventListener('click', function(e) {
       e.preventDefault();
+      saveLunch();
       location.hash = 'menu';
     });
 
@@ -454,18 +494,36 @@
       persistDay(today, dayData);
     });
 
-    document.getElementById('pu-increment').addEventListener('click', function() {
-      let next = (state.puCounter || 0) + 1;
-      if (next >= 100) next = 0;
-      state.puCounter = next;
+    function savePu() {
+      var el = document.getElementById('pu-value');
+      var n = parseInt(el.value, 10);
+      if (isNaN(n) || n < 0) n = 0;
+      if (n > 100) n = 100;
+      state.puCounter = n;
+      el.value = n;
       persistDay(currentKey, state);
-      renderNote();
+    }
+    document.getElementById('pu-value').addEventListener('change', savePu);
+    document.getElementById('pu-value').addEventListener('blur', savePu);
+    document.getElementById('pu-decrement').addEventListener('click', function() {
+      var n = (state.puCounter || 0) - 1;
+      state.puCounter = n < 0 ? 0 : n;
+      persistDay(currentKey, state);
+      renderNote(true);
+    });
+    document.getElementById('pu-increment').addEventListener('click', function() {
+      var n = (state.puCounter || 0) + 1;
+      state.puCounter = n > 100 ? 100 : n;
+      persistDay(currentKey, state);
+      renderNote(true);
     });
 
-    document.getElementById('lunch-time').addEventListener('change', function() {
-      state.lunch = this.value;
+    // Lunch: save on change, load from main data (like todos)
+    function saveLunch() {
+      state.lunch = (document.getElementById('lunch-time').value || '').trim();
       persistDay(currentKey, state);
-    });
+    }
+    document.getElementById('lunch-time').addEventListener('change', saveLunch);
 
     document.getElementById('todo-add').addEventListener('click', addTodo);
     document.getElementById('todo-input').addEventListener('keydown', function(e) {
@@ -483,7 +541,7 @@
       state.todos.push({ text: text, done: false });
       input.value = '';
       persistDay(currentKey, state);
-      renderNote();
+      renderNote(true);
     }
 
     window.addEventListener('hashchange', function() { showView(getRoute()); });
