@@ -524,7 +524,7 @@
       }
       .todo-row-delete {
         position: absolute;
-        right: 0;
+        right: -80px;
         top: 0;
         bottom: 0;
         width: 80px;
@@ -545,8 +545,10 @@
         padding: 0;
         flex-shrink: 0;
         z-index: 0;
+        transition: right 300ms ease;
       }
       .todo-row.reveal-delete .todo-row-delete {
+        right: 0;
         pointer-events: auto;
       }
       .todo-row-delete:active {
@@ -944,9 +946,10 @@
       }
 
       function setupSwipeToDelete(listEl) {
-        var startX = 0, currentX = 0, startOffset = 0, sliding = null;
+        var startX = 0, startY = 0, currentX = 0, startOffset = 0, sliding = null, touchId = null, gestureLock = null;
         var DELETE_WIDTH = 80;
         var THRESHOLD = 40;
+        var LOCK_THRESHOLD = 12;
 
         function slideTo(rowEl, offsetPx) {
           var content = rowEl && rowEl.querySelector(".todo-item");
@@ -975,12 +978,14 @@
           });
         }
 
-        function onStart(clientX, target) {
+        function onStart(clientX, clientY, target) {
           if (todoReorderDragging) return;
           var r = target.closest(".todo-row");
           if (!r) return;
+          gestureLock = null;
           sliding = r;
           startX = clientX;
+          startY = clientY;
           currentX = clientX;
           startOffset = r.classList.contains("reveal-delete") ? -DELETE_WIDTH : 0;
           var content = r.querySelector(".todo-item");
@@ -1003,24 +1008,44 @@
           if (finalOffset < -THRESHOLD) commitSlide(sliding, true);
           else commitSlide(sliding, false);
           sliding = null;
+          touchId = null;
+          gestureLock = null;
         }
 
         listEl.addEventListener("touchstart", function (e) {
           if (e.target.closest(".todo-row-delete") || e.target.closest(".todo-drag-handle")) return;
-          onStart(e.touches[0].clientX, e.target);
+          var t = e.changedTouches[0] || e.touches[0];
+          if (!t) return;
+          touchId = t.identifier;
+          onStart(t.clientX, t.clientY, e.target);
         }, { passive: true });
         listEl.addEventListener("touchmove", function (e) {
-          if (sliding) {
+          var t = Array.prototype.find.call(e.touches, function (x) { return x.identifier === touchId; }) || (e.changedTouches && e.changedTouches[0]);
+          if (!t || !sliding) return;
+          var dx = t.clientX - startX;
+          var dy = t.clientY - startY;
+          if (gestureLock === null) {
+            if (Math.abs(dx) > LOCK_THRESHOLD || Math.abs(dy) > LOCK_THRESHOLD) {
+              gestureLock = Math.abs(dx) >= Math.abs(dy) ? "swipe" : "scroll";
+            }
+          }
+          if (gestureLock === "swipe") {
             e.preventDefault();
-            onMove(e.touches[0].clientX);
+            onMove(t.clientX);
           }
         }, { passive: false });
-        listEl.addEventListener("touchend", onEnd, { passive: true });
-        listEl.addEventListener("touchcancel", onEnd, { passive: true });
+        listEl.addEventListener("touchend", function (e) {
+          var t = e.changedTouches[0];
+          if (t && t.identifier === touchId) onEnd();
+        }, { passive: true });
+        listEl.addEventListener("touchcancel", function (e) {
+          var t = e.changedTouches[0];
+          if (t && t.identifier === touchId) onEnd();
+        }, { passive: true });
 
         listEl.addEventListener("mousedown", function (e) {
           if (e.button !== 0 || e.target.closest(".todo-row-delete") || e.target.closest(".todo-drag-handle")) return;
-          onStart(e.clientX, e.target);
+          onStart(e.clientX, e.clientY, e.target);
         });
         document.addEventListener("mousemove", function (e) {
           if (sliding) onMove(e.clientX);
