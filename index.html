@@ -230,30 +230,45 @@
         font-size: 0.95rem;
         margin: 0 0 28px;
       }
-      .btn-today {
-        display: block;
+      .today-section-title {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-muted);
+        margin: 0 0 8px;
+      }
+      .menu-item-btn {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         width: 100%;
         font: inherit;
         font-size: 1.05rem;
         font-weight: 500;
-        color: #fff;
-        background: var(--accent);
-        border: none;
+        color: var(--text);
+        background: var(--surface);
+        border: 1px solid var(--border);
         border-radius: var(--radius);
-        padding: 16px 20px;
+        padding: 14px 18px;
         margin-bottom: 28px;
         cursor: pointer;
-        text-align: center;
+        text-align: left;
         -webkit-appearance: none;
         appearance: none;
-        box-shadow: 0 4px 14px var(--accent-dim);
-        transition: box-shadow 0.2s ease, transform 0.1s ease;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        transition: border-color 0.2s ease, background 0.2s ease;
       }
-      .btn-today:hover {
-        box-shadow: 0 6px 20px var(--accent-dim);
+      .menu-item-btn:hover {
+        background: var(--surface-hover);
+        border-color: rgba(255, 255, 255, 0.08);
       }
-      .btn-today:active {
-        transform: scale(0.99);
+      .menu-item-btn:active {
+        opacity: 0.95;
+      }
+      .menu-item-chevron {
+        color: var(--text);
+        font-size: 1.1rem;
       }
       .past-section-title {
         font-size: 0.75rem;
@@ -269,7 +284,9 @@
         margin: 0;
       }
       .past-list a {
-        display: block;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         padding: 14px 18px;
         color: var(--text);
         text-decoration: none;
@@ -286,6 +303,11 @@
       }
       .past-list a:active {
         opacity: 0.95;
+      }
+      .past-list a::after {
+        content: "›";
+        font-size: 1.1rem;
+        color: var(--text);
       }
       .back-link {
         display: inline-flex;
@@ -335,6 +357,182 @@
         width: 22px;
         height: 22px;
       }
+
+      /* Note view nav */
+      .note-nav {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+      .note-back {
+        margin-bottom: 0;
+        font-size: 1.25rem;
+        padding: 4px 0;
+      }
+      .note-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0;
+        color: var(--text-muted);
+      }
+      .note-date {
+        margin: 0 0 20px;
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--text-muted);
+      }
+
+      /* 2-column counters */
+      .counters-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+      .counter-card {
+        margin-bottom: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 16px 12px;
+      }
+      .counter-card .card-title {
+        margin-bottom: 8px;
+      }
+      .counter-big-value {
+        font-size: 2rem;
+        font-weight: 600;
+        color: var(--text);
+        margin: 8px 0 12px;
+        min-height: 2.25rem;
+      }
+      .counter-buttons {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        width: 100%;
+      }
+      .counter-btn {
+        flex: 1;
+        max-width: 80px;
+        padding: 10px;
+        font-size: 1.25rem;
+        color: var(--text);
+        border-color: var(--border);
+      }
+      .counter-btn:hover {
+        border-color: var(--text-muted);
+      }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+      }
+
+      /* Lunch full-width */
+      .lunch-card {
+        margin-bottom: 14px;
+      }
+      .lunch-input-wrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+      }
+      .lunch-time-input {
+        flex: 1;
+        min-width: 0;
+        padding: 12px 14px;
+        font-size: 1rem;
+      }
+      .lunch-time-icon {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-muted);
+      }
+      .lunch-time-icon svg {
+        display: block;
+      }
+
+      /* TODO: add row above list, + on right */
+      .todo-card .card-title {
+        margin-bottom: 12px;
+      }
+      .todo-card .todos-input-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+      .todo-card .todos-input-row input {
+        flex: 1;
+        min-width: 0;
+        font: inherit;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--bg);
+        color: var(--text);
+      }
+      .todo-card .todos-input-row input:focus {
+        border-color: var(--accent);
+        outline: none;
+      }
+      .todo-card .todos-input-row input::placeholder {
+        color: var(--text-muted);
+      }
+      .todo-add-btn {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        line-height: 1;
+        color: var(--text);
+        background: var(--surface-hover);
+        border: 1px solid var(--border);
+        flex-shrink: 0;
+      }
+      .todo-add-btn:hover {
+        border-color: var(--text-muted);
+      }
+      .todo-list {
+        border-top: 1px solid var(--border);
+        padding-top: 8px;
+      }
+      .todo-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 0;
+        border-bottom: none;
+      }
+      .todo-item input[type="checkbox"] {
+        width: 22px;
+        height: 22px;
+        flex-shrink: 0;
+        accent-color: var(--accent);
+      }
+      .todo-item label {
+        flex: 1;
+        cursor: pointer;
+        user-select: none;
+      }
+      .todo-item.done label {
+        text-decoration: line-through;
+        color: var(--text-muted);
+      }
     </style>
   </head>
   <body>
@@ -349,10 +547,12 @@
         </a>
       </div>
       <p class="menu-sub">Open today’s note or pick a past day.</p>
-      <button type="button" class="btn-today" id="btn-today">
-        Today’s note
+      <div class="today-section-title">Today's note</div>
+      <button type="button" class="menu-item-btn" id="btn-today">
+        <span>Today's note</span>
+        <span class="menu-item-chevron">›</span>
       </button>
-      <div class="past-section-title">Past</div>
+      <div class="past-section-title">PAST</div>
       <ul id="past-list" class="past-list"></ul>
     </div>
 
@@ -373,62 +573,59 @@
     </div>
 
     <div id="note-view" class="view">
-      <a href="#" class="back-link" id="back-to-menu">← Back to menu</a>
-      <h1>Daily Tracker</h1>
-      <p
-        id="today-date"
-        style="margin: 0 0 20px; font-size: 1.1rem; font-weight: 500"
-      ></p>
+      <header class="note-nav">
+        <a href="#" class="back-link note-back" id="back-to-menu">←</a>
+        <h1 class="note-title">Daily Tracker</h1>
+      </header>
+      <p class="note-date" id="today-date"></p>
 
-      <div class="card">
-        <div class="card-title">SR Counter</div>
-        <div class="row">
-          <span class="counter-value" id="sr-display">Day 0</span>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">PU Counter</div>
-        <div class="row row-tight">
-          <div class="pu-group">
-            <input
-              type="number"
-              id="pu-value"
-              min="0"
-              max="100"
-              value="0"
-              aria-label="PU count"
-            />
-            <span class="counter-value">/100</span>
+      <div class="counters-row">
+        <div class="card counter-card">
+          <div class="card-title">SR Counter</div>
+          <div class="counter-big-value" id="sr-display">0</div>
+          <div class="counter-buttons">
+            <button type="button" class="counter-btn" id="sr-decrement" aria-label="Decrement SR">−</button>
+            <button type="button" class="counter-btn" id="sr-increment" aria-label="Increment SR">+</button>
           </div>
-          <button type="button" id="pu-decrement">−</button>
-          <button type="button" id="pu-increment">+</button>
+        </div>
+        <div class="card counter-card">
+          <div class="card-title">PU Counter</div>
+          <div class="counter-big-value" id="pu-display">0</div>
+          <input type="number" id="pu-value" min="0" max="100" value="0" aria-label="PU count" class="sr-only" />
+          <div class="counter-buttons">
+            <button type="button" class="counter-btn" id="pu-decrement" aria-label="Decrement PU">−</button>
+            <button type="button" class="counter-btn" id="pu-increment" aria-label="Increment PU">+</button>
+          </div>
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-title">Lunch (clock out time)</div>
-        <div class="row">
+      <div class="card lunch-card">
+        <div class="card-title">Lunch clock out time</div>
+        <div class="lunch-input-wrap">
           <input
             type="time"
             id="lunch-time"
+            class="lunch-time-input"
             aria-label="Lunch clock out time"
           />
+          <span class="lunch-time-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          </span>
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-title">Todo</div>
+      <div class="card todo-card">
+        <div class="card-title">TODO</div>
         <div class="todos-input-row">
           <input
             type="text"
             id="todo-input"
-            placeholder="Add a task"
+            placeholder="Add new todo..."
             enterkeyhint="done"
           />
-          <button type="button" id="todo-add">Add</button>
+          <button type="button" class="todo-add-btn" id="todo-add" aria-label="Add todo">+</button>
         </div>
-        <div id="todo-list"></div>
+        <div id="todo-list" class="todo-list"></div>
       </div>
     </div>
 
@@ -588,8 +785,10 @@
         document.getElementById("today-date").textContent =
           formatDisplayDate(currentKey);
         document.getElementById("sr-display").textContent =
-          "Day " + (state.srCounter ?? 0);
-        document.getElementById("pu-value").value = state.puCounter ?? 0;
+          String(state.srCounter ?? 0);
+        var puVal = state.puCounter ?? 0;
+        document.getElementById("pu-display").textContent = String(puVal);
+        document.getElementById("pu-value").value = puVal;
 
         const listEl = document.getElementById("todo-list");
         listEl.innerHTML = "";
@@ -606,10 +805,7 @@
             i +
             '">' +
             escapeHtml(todo.text) +
-            "</label>" +
-            '<button type="button" class="remove" data-i="' +
-            i +
-            '">Remove</button>';
+            "</label>";
           listEl.appendChild(div);
         });
 
@@ -622,15 +818,23 @@
           });
         });
 
-        listEl.querySelectorAll(".remove").forEach((btn) => {
-          btn.addEventListener("click", function () {
-            const i = parseInt(this.getAttribute("data-i"), 10);
-            state.todos.splice(i, 1);
-            persistDay(currentKey, state);
-            renderNote(true);
-          });
-        });
       }
+
+      document
+        .getElementById("sr-decrement")
+        .addEventListener("click", function () {
+          var n = (state.srCounter ?? 0) - 1;
+          state.srCounter = n < 0 ? 0 : n;
+          persistDay(currentKey, state);
+          renderNote(true);
+        });
+      document
+        .getElementById("sr-increment")
+        .addEventListener("click", function () {
+          state.srCounter = (state.srCounter ?? 0) + 1;
+          persistDay(currentKey, state);
+          renderNote(true);
+        });
 
       function escapeHtml(s) {
         const div = document.createElement("div");
