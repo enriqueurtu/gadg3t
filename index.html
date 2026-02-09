@@ -236,11 +236,28 @@
         display: block;
         min-height: 100vh;
       }
-      .slide-container .slide-track.show-note {
+      /* Order: menu (left) → past list (middle) → note/detail (right); always move left→right */
+      .slide-container .slide-track.show-past {
         transform: translateX(-33.333%);
       }
-      .slide-container .slide-track.show-past {
+      .slide-container .slide-track.show-note {
         transform: translateX(-66.666%);
+      }
+      .slide-container .slide-track.no-transition {
+        transition: none;
+      }
+      #note-view.open-up {
+        animation: noteOpenUp 0.35s ease forwards;
+      }
+      @keyframes noteOpenUp {
+        from {
+          opacity: 0;
+          transform: scale(0.98);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
       }
 
       .menu-title {
@@ -261,13 +278,14 @@
         text-transform: uppercase;
         letter-spacing: 0.04em;
         color: var(--text-muted);
-        margin: 0 0 8px;
+        margin: 0 0 12px;
       }
       .menu-item-btn {
         display: flex;
         align-items: center;
         justify-content: space-between;
         width: 100%;
+        min-height: 52px;
         font: inherit;
         font-size: 1.05rem;
         font-weight: 500;
@@ -276,7 +294,7 @@
         border: 1px solid var(--border);
         border-radius: var(--radius);
         padding: 14px 18px;
-        margin-bottom: 28px;
+        margin-bottom: 12px;
         cursor: pointer;
         text-align: left;
         -webkit-appearance: none;
@@ -285,6 +303,9 @@
         transition:
           border-color 0.2s ease,
           background 0.2s ease;
+      }
+      .menu-item-btn:last-child {
+        margin-bottom: 0;
       }
       .menu-item-btn:hover {
         background: var(--surface-hover);
@@ -379,12 +400,18 @@
         padding: 0;
         margin: 0;
       }
+      .past-trackers-list li {
+        margin-bottom: 12px;
+      }
+      .past-trackers-list li:last-child {
+        margin-bottom: 0;
+      }
       .past-tracker-card {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 16px 18px;
-        margin-bottom: 10px;
+        min-height: 52px;
+        padding: 14px 18px;
         color: var(--text);
         text-decoration: none;
         background: var(--surface);
@@ -403,14 +430,17 @@
         opacity: 0.95;
       }
       .past-tracker-card-content {
+        display: flex;
+        align-items: center;
+        gap: 10px;
         flex: 1;
         min-width: 0;
       }
       .past-tracker-card-date {
-        font-size: 1.1rem;
+        font-size: 1.05rem;
         font-weight: 600;
         color: var(--text);
-        margin: 0 0 6px;
+        margin: 0;
       }
       .past-tracker-card-metrics {
         font-size: 0.9rem;
@@ -463,7 +493,7 @@
         display: flex;
         align-items: center;
         gap: 10px;
-        margin-bottom: 8px;
+        margin-bottom: 20px;
       }
       .note-back {
         margin-bottom: 0;
@@ -476,13 +506,6 @@
         margin: 0;
         color: var(--text-muted);
       }
-      .note-date {
-        margin: 0 0 20px;
-        font-size: 1rem;
-        font-weight: 500;
-        color: var(--text-muted);
-      }
-
       /* 2-column counters */
       .counters-row {
         display: grid;
@@ -816,12 +839,19 @@
           </a>
         </div>
 
+        <div id="past-view" class="view past-trackers-view">
+          <header class="past-trackers-nav">
+            <a href="#menu" class="back-link note-back">←</a>
+            <h1 class="past-trackers-title">Previous TRACK3RS</h1>
+          </header>
+          <ul id="past-trackers-list" class="past-trackers-list"></ul>
+        </div>
+
         <div id="note-view" class="view">
           <header class="note-nav">
             <a href="#" class="back-link note-back" id="back-to-menu">←</a>
-            <h1 class="note-title">Daily Tracker</h1>
+            <h1 class="note-title" id="today-date"></h1>
           </header>
-          <p class="note-date" id="today-date"></p>
 
           <div class="counters-row">
             <div class="card counter-card">
@@ -929,14 +959,6 @@
             <div class="card-title">Notes</div>
             <textarea id="notes-input" class="notes-input" rows="4"></textarea>
           </div>
-        </div>
-
-        <div id="past-view" class="view past-trackers-view">
-          <header class="past-trackers-nav">
-            <a href="#menu" class="back-link note-back">←</a>
-            <h1 class="past-trackers-title">Previous TRACK3RS</h1>
-          </header>
-          <ul id="past-trackers-list" class="past-trackers-list"></ul>
         </div>
       </div>
     </div>
@@ -1069,20 +1091,44 @@
         var slideContainer = document.getElementById("slide-container");
         var optionsView = document.getElementById("options-view");
         var slideTrack = document.getElementById("slide-track");
+        var noteView = document.getElementById("note-view");
+        var wasOnPastList = slideTrack.classList.contains("show-past");
+        var wasOnTodaysNote =
+          slideTrack.classList.contains("show-note") && currentKey === todayKey();
+        if (route.view === "menu" && wasOnTodaysNote) {
+          slideTrack.classList.add("no-transition");
+        }
         slideContainer.style.display = route.view === "options" ? "none" : "";
         optionsView.classList.toggle("active", route.view === "options");
         slideTrack.classList.toggle("show-note", route.view === "note");
         slideTrack.classList.toggle("show-past", route.view === "past");
         if (route.view === "menu") {
+          if (wasOnTodaysNote) {
+            requestAnimationFrame(function () {
+              slideTrack.classList.remove("no-transition");
+            });
+          }
           renderMenu();
         } else if (route.view === "options") {
           // options is static
         } else if (route.view === "past") {
           renderPastTrackers();
-        } else {
+        } else if (route.view === "note") {
           currentKey = route.dateKey;
           state = getDayData(currentKey);
           renderNote(false);
+          if (!wasOnPastList && route.dateKey === todayKey()) {
+            slideTrack.classList.add("no-transition");
+            requestAnimationFrame(function () {
+              noteView.classList.add("open-up");
+              requestAnimationFrame(function () {
+                slideTrack.classList.remove("no-transition");
+              });
+              setTimeout(function () {
+                noteView.classList.remove("open-up");
+              }, 350);
+            });
+          }
         }
       }
 
@@ -1115,16 +1161,16 @@
                 k +
                 '" class="past-tracker-card">' +
                 '<div class="past-tracker-card-content">' +
-                '<p class="past-tracker-card-date">' +
+                '<span class="past-tracker-card-date">' +
                 formatDisplayDate(k) +
-                "</p>" +
-                '<p class="past-tracker-card-metrics">SR: ' +
+                "</span>" +
+                '<span class="past-tracker-card-metrics">SR: ' +
                 sr +
                 " PU: " +
                 pu +
                 " Todos: " +
                 todoCount +
-                "</p></div>" +
+                "</span></div>" +
                 '<span class="past-tracker-card-chevron">›</span></a></li>'
               );
             })
@@ -1496,7 +1542,8 @@
           e.preventDefault();
           saveLunch();
           saveNotes();
-          location.hash = "menu";
+          // If viewing a past date, go back to previous trackers list; else go to menu
+          location.hash = currentKey !== todayKey() ? "past" : "menu";
         });
 
       document
